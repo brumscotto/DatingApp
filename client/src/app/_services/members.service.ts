@@ -8,6 +8,7 @@ import { PaginatedResult } from '../_model/Pagination.model';
 import { User } from '../_model/User.model';
 import { UserParams } from '../_model/UserParams.model';
 import { AccountService } from './account.service';
+import { getPaginatedResult, getPaginationHeaders } from './pagination-helper';
 
 @Injectable({
   providedIn: 'root'
@@ -51,14 +52,14 @@ export class MembersService {
       return of(response);
     }
 
-    let params = this.getPaginationHeaders(userParams.pageNumber, userParams.pageSize);
+    let params = getPaginationHeaders(userParams.pageNumber, userParams.pageSize);
 
     params = params.append('minAge', userParams.minAge.toString());
     params = params.append('maxAge', userParams.maxAge.toString());
     params = params.append('gender', userParams.gender);
     params = params.append('orderBy', userParams.orderBy);
 
-    return this.getPaginatedResult<PaginatedResult<Member[]>>(this.baseUrl + 'users', params).pipe(
+    return getPaginatedResult<Member[]>(this.baseUrl + 'users', params, this.http).pipe(
       tap(response => {
         this.memberCache.set(Object.values(userParams).join('-'), response);
       })
@@ -70,36 +71,14 @@ export class MembersService {
   }
 
   getLikes(predicate: string, pageNumber: number, pageSize: number) {
-    let params = this.getPaginationHeaders(pageNumber, pageSize);
+    let params = getPaginationHeaders(pageNumber, pageSize);
     params = params.append('predicate', predicate)
-    return this.getPaginatedResult<Partial<Member[]>>(this.baseUrl + 'likes', params);
+    return getPaginatedResult<Partial<Member[]>>(this.baseUrl + 'likes', params, this.http);
   }
 
-  private getPaginatedResult<T>(url: string, userParams: HttpParams): Observable<PaginatedResult<Member[]>> {
-    const paginatedResult: PaginatedResult<Member[]> = new PaginatedResult<Member[]>();
 
-    return this.http.get<Member[]>(url, { observe: 'response', params: userParams }).pipe(
-      map(response => {
-        if (response.body) {
-          paginatedResult.result = response.body;
-        }
-        let paginationHeaders = response.headers.get('Pagination');
-        if (paginationHeaders) {
-          paginatedResult.pagination = JSON.parse(paginationHeaders);
-        }
-        return paginatedResult;
-      })
-    );
-  }
 
-  private getPaginationHeaders(pageNumber: number, pageSize: number){
-    let params = new HttpParams();
-    params = params.append('pageNumber', pageNumber.toString());
-    params = params.append('pageSize', pageSize.toString());
-    return params;
-  }
-
-  getMember(userName: string): Observable<Member>{
+  getMember(userName: string | null): Observable<Member>{
     const member = [...this.memberCache.values()]
     .reduce((arr, elem) => arr.concat(elem.result),[])
     .find((member: Member) => member.username === userName);
