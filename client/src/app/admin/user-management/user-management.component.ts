@@ -17,8 +17,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     "Admin",
     "Moderator",
     "Member"
-  ]
-  // selectedRoles: string[] = []
+  ];
 
   modalHiddenSub?: Subscription = Subscription.EMPTY;
   adminUpdateUserSub?: Subscription = Subscription.EMPTY;
@@ -52,7 +51,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
     this.bsModalRef = this.modalService.show(RolesModalComponent, config);
 
-    this.bsModalRef.onHide?.subscribe({
+    this.modalHiddenSub = this.bsModalRef.onHide?.subscribe({
       next: () => {
         const selectedRoles = this.bsModalRef.content?.selectedRoles;
         if(!this.arrayEqual(selectedRoles!, user.roles)) {
@@ -64,64 +63,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         }
       }
     })
-
-    // this.bsModalRef.content?.updateSelectedRoles.subscribe({
-    //   next: (values: any) => {
-    //     console.log(values, typeof values);
-
-    //     let roles: string[] = values;
-
-    //     this.adminUpdateUserSub = this.adminService.updateUserRoles(user.username, roles).subscribe(()=> {
-    //         user.roles = [...roles];
-    //     })
-    //   }
-    // });
   }
 
   private arrayEqual(arr1: any[], arr2: any[]){
     return JSON.stringify(arr1.sort()) === JSON.stringify(arr2.sort());
-  }
-
-  private getRolesArray(user: User){
-    const userRoles = user.roles;
-    const availableRoles: any[] = [
-        {name: "Admin", value: "Admin", checked: false},
-        {name: "Moderator", value: "Moderator", checked: false},
-        {name: "Member", value: "Member",checked: false},
-    ];
-
-    for (let role of availableRoles){
-      if(userRoles.includes(role.name)){
-        role.checked = true;
-      }
-    }
-    return availableRoles;
-
-    // const roles: any[] = [];
-    // const userRoles = user.roles;
-    // const availableRoles: any[] = [
-    //   {name: "Admin", value: "Admin"},
-    //   {name: "Moderator", value: "Moderator"},
-    //   {name: "Member", value: "Member"},
-    // ]
-    // availableRoles.forEach(role => {
-    //   let isMatch = false;
-    //   for (const userRole of userRoles){
-    //     if(role.name == userRole) {
-    //       isMatch = true;
-    //       role.checked = true;
-    //       roles.push(role);
-    //       break;
-    //     }
-    //     if(!isMatch){
-    //       role.checked = false;
-    //       roles.push(role)
-    //     }
-    //   }
-    // });
-
-    // console.log(roles);
-    // return roles;
   }
 
   ngOnDestroy(): void {
@@ -130,6 +75,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     }
     if(this.adminUpdateUserSub){
       this.adminUpdateUserSub.unsubscribe();
+    }
+    if(this.modalHiddenSub) {
+      this.modalHiddenSub.unsubscribe();
     }
   }
 
